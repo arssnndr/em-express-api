@@ -27,6 +27,7 @@ app.get('/', (_req, res) => {
 });
 
 // Mount routes
+app.use('/', indexRouter);
 app.use('/api', indexRouter);
 
 // Fallback 404 as JSON
