@@ -1,9 +1,10 @@
-var express = require('express');
-var router = express.Router();
+import { Router } from 'express';
+import authRoutes from './auth.js';
+import employeeRoutes from './employees.js';
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+const router = Router();
 
-module.exports = router;
+router.use('/auth', authRoutes);
+router.use('/employees', employeeRoutes);
+
+export default router;

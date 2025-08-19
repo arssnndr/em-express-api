@@ -1,20 +1,37 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+import express from 'express';
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import cors from 'cors';
+import indexRouter from './routes/index.js';
+import { fileURLToPath } from 'url';
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-var app = express();
+const app = express();
 
 app.use(logger('dev'));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+// Avoid 404 for favicon
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
-module.exports = app;
+// Health check
+app.get('/', (_req, res) => {
+    res.send('Employee Management API is running!');
+});
+
+// Mount routes
+app.use('/api', indexRouter);
+
+// Fallback 404 as JSON
+app.use((req, res) => {
+    res.status(404).json({ message: 'Not Found', path: req.path });
+});
+
+export default app;
