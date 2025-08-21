@@ -42,9 +42,9 @@ INSERT INTO groups (name) VALUES
 -- Insert a dummy user for login
 -- Note: In a real application, you would hash the password.
 -- For this demo, we are storing it as plain text for simplicity.
--- The password 'password123' is stored directly.
+-- The password 'P@ssw0rd' is stored directly.
 INSERT INTO users (username, password_hash) VALUES
-('admin', 'password123');
+('admin1', 'P@ssw0rd');
 
 -- Optional: Insert some dummy employee data to get started
 INSERT INTO employees (username, first_name, last_name, email, birth_date, basic_salary, status, group_name, description)
