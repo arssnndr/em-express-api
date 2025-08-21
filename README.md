@@ -3,7 +3,7 @@
 Express API (ESM) untuk Employee Management, menggunakan Supabase sebagai backend database.
 
 ## Fitur
-- Auth: `POST /api/auth/login`
+- Auth: `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`
 - Employees: `GET /api/employees`, `GET /api/employees/:id`, `POST /api/employees`, `DELETE /api/employees/:id`
 - CORS aktif, response 404 dalam JSON
 
@@ -23,6 +23,9 @@ Express API (ESM) untuk Employee Management, menggunakan Supabase sebagai backen
    Isi variabel berikut:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
+   - `JWT_SECRET` (wajib, lihat panduan di bawah)
+   - `JWT_EXPIRES_IN` (opsional, default `15m`)
+   - `CORS_ORIGIN` (opsional, default `http://localhost:4200`)
    - (Opsional) `PORT` (default 3000 untuk local server)
 
 ## Menjalankan Secara Lokal
@@ -42,7 +45,38 @@ npm start
 Didefinisikan di `.env` (lihat `.env.example`)
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+- `JWT_SECRET` — secret untuk signing JWT (gunakan string acak yang kuat)
+- `JWT_EXPIRES_IN` — masa berlaku token, contoh: `15m`, `1h`
+- `CORS_ORIGIN` — daftar origin yang diizinkan, pisahkan dengan koma
 - `PORT` (opsional untuk lokal)
+
+### Generate JWT_SECRET (Strong Random String)
+Anda dapat membuat nilai `JWT_SECRET` yang kuat dengan salah satu perintah berikut (Linux):
+
+- OpenSSL (hex, 64 chars / 32 bytes)
+```bash
+openssl rand -hex 32
+```
+
+- OpenSSL (base64-url, ±64–86 chars)
+```bash
+openssl rand -base64 48 | tr '+/' '-_' | tr -d '='
+```
+
+- Node.js (hex, 64 chars)
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+- Python (hex, 64 chars)
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Contoh menulis langsung ke `.env` (akan menambah baris JWT_SECRET di akhir file):
+```bash
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
+```
 
 ## Integrasi Frontend
 Frontend Angular mengarah ke base URL API melalui environment:
