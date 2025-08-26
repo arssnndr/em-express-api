@@ -43,15 +43,15 @@ INSERT INTO groups (name) VALUES
 -- Note: In a real application, you would hash the password.
 -- For this demo, we are storing it as plain text for simplicity.
 -- The password 'P@ssw0rd' is stored directly.
-INSERT INTO users (username, password_hash) VALUES
-('admin1', 'P@ssw0rd');
+-- INSERT INTO users (username, password_hash) VALUES
+-- ('admin1', 'P@ssw0rd');
 
 -- Optional: Insert some dummy employee data to get started
-INSERT INTO employees (username, first_name, last_name, email, birth_date, basic_salary, status, group_name, description)
-VALUES
-('budisantoso', 'Budi', 'Santoso', 'budi.santoso@example.com', '1990-05-15', 10000000, 'Active', 'IT Development', 'Senior Frontend Developer with 5 years of experience.'),
-('sitiaminah', 'Siti', 'Aminah', 'siti.aminah@example.com', '1992-08-22', 8500000, 'Active', 'Human Resources', 'HR Generalist responsible for recruitment and employee relations.'),
-('dewilestari', 'Dewi', 'Lestari', 'dewi.lestari@example.com', '1988-11-30', 12000000, 'On Leave', 'Finance & Accounting', 'Lead accountant managing financial reports.');
+-- INSERT INTO employees (username, first_name, last_name, email, birth_date, basic_salary, status, group_name, description)
+-- VALUES
+-- ('budisantoso', 'Budi', 'Santoso', 'budi.santoso@example.com', '1990-05-15', 10000000, 'Active', 'IT Development', 'Senior Frontend Developer with 5 years of experience.'),
+-- ('sitiaminah', 'Siti', 'Aminah', 'siti.aminah@example.com', '1992-08-22', 8500000, 'Active', 'Human Resources', 'HR Generalist responsible for recruitment and employee relations.'),
+-- ('dewilestari', 'Dewi', 'Lestari', 'dewi.lestari@example.com', '1988-11-30', 12000000, 'On Leave', 'Finance & Accounting', 'Lead accountant managing financial reports.');
 
 -- Generate 125 dummy employees
 WITH
@@ -74,17 +74,62 @@ WITH
     SELECT ARRAY['Active','Inactive','On Leave','Probation'] AS arr
   ),
   groups_agg AS (
-    SELECT array_agg(name) AS arr FROM groups
+    SELECT COALESCE(array_agg(name), ARRAY['Default Group']::text[]) AS arr FROM groups
+  ),
+  name_pairs AS (
+    SELECT fn, ln
+    FROM unnest((SELECT arr FROM fnames)) AS fn(fn)
+    CROSS JOIN unnest((SELECT arr FROM lnames)) AS ln(ln)
+    ORDER BY random()
+    LIMIT 125
+  ),
+  paired AS (
+    SELECT row_number() OVER () AS rn, fn, ln
+    FROM name_pairs
+  ),
+  status_pool AS (
+    -- Ulangi array status secukupnya untuk mencapai >=125 baris, lalu jadikan satu kolom
+    SELECT s
+    FROM generate_series(
+           1,
+           CEIL(125.0 / GREATEST(1, array_length((SELECT arr FROM statuses),1)))::int
+         ) rep
+    CROSS JOIN LATERAL (
+      SELECT (SELECT arr FROM statuses)[i] AS s
+      FROM generate_subscripts((SELECT arr FROM statuses),1) AS i
+    ) x
+  ),
+  status_seq AS (
+    SELECT row_number() OVER (ORDER BY random()) AS rn, s AS status
+    FROM status_pool
+    LIMIT 125
+  ),
+  group_pool AS (
+    -- Ulangi array group secukupnya untuk mencapai >=125 baris, lalu jadikan satu kolom
+    SELECT g
+    FROM generate_series(
+           1,
+           CEIL(125.0 / GREATEST(1, array_length((SELECT arr FROM groups_agg),1)))::int
+         ) rep
+    CROSS JOIN LATERAL (
+      SELECT (SELECT arr FROM groups_agg)[i] AS g
+      FROM generate_subscripts((SELECT arr FROM groups_agg),1) AS i
+    ) x
+  ),
+  group_seq AS (
+    SELECT row_number() OVER (ORDER BY random()) AS rn, g AS group_name
+    FROM group_pool
+    LIMIT 125
   )
 INSERT INTO employees (
   username, first_name, last_name, email, birth_date, basic_salary, status, group_name, description
 )
 SELECT
   -- username & email dibuat unik dengan suffix nomor gs
-  lower(pick.fn) || lower(pick.ln) || gs AS username,
-  pick.fn AS first_name,
-  pick.ln AS last_name,
-  lower(pick.fn) || '.' || lower(pick.ln) || gs || '@' || pick.domain AS email,
+  lower(p.fn) || lower(p.ln) || p.rn AS username,
+  p.fn AS first_name,
+  p.ln AS last_name,
+  lower(p.fn) || '.' || lower(p.ln) || p.rn || '@' || pick.domain AS email,
   -- tanggal lahir: usia 20-59 tahun (acak) + offset hari acak
   (
     current_date
@@ -93,23 +138,17 @@ SELECT
   )::date AS birth_date,
   -- gaji dasar: 5.000.000 - 20.000.000 (acak), dua desimal
   round((5000000 + random()*15000000)::numeric, 2) AS basic_salary,
-  pick.status AS status,
-  pick.group_name AS group_name,
+  status_seq.status AS status,
+  group_seq.group_name AS group_name,
   format(
     'Employee %s %s working in %s department with %s status.',
-    pick.fn, pick.ln, pick.group_name, pick.status
+    p.fn, p.ln, group_seq.group_name, status_seq.status
   ) AS description
-FROM generate_series(1,125) AS gs
-CROSS JOIN fnames
-CROSS JOIN lnames
+FROM paired p
+JOIN status_seq USING (rn)
+JOIN group_seq USING (rn)
 CROSS JOIN domains
-CROSS JOIN statuses
-CROSS JOIN groups_agg
 CROSS JOIN LATERAL (
   SELECT
-    fnames.arr[1 + (random()*(array_length(fnames.arr,1)-1))::int]   AS fn,
-    lnames.arr[1 + (random()*(array_length(lnames.arr,1)-1))::int]   AS ln,
-    statuses.arr[1 + (random()*(array_length(statuses.arr,1)-1))::int] AS status,
-    groups_agg.arr[1 + (random()*(array_length(groups_agg.arr,1)-1))::int] AS group_name,
-    domains.arr[1 + (random()*(array_length(domains.arr,1)-1))::int] AS domain
+    domains.arr[1 + floor(random()*array_length(domains.arr,1))::int]     AS domain
 ) AS pick;
