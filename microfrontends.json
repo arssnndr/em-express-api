@@ -1,0 +1,15 @@
+{
+    "applications": [
+        {
+            "em-express-api": {
+                "routing": [
+                    {
+                        "paths": [
+                            "/employee-management-api"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
