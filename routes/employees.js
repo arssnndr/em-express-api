@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllEmployees, getEmployeeById, createEmployee, deleteEmployee } from '../controllers/employeeController.js';
+import { getAllEmployees, getEmployeeById, createEmployee, deleteEmployee, updateEmployee } from '../controllers/employeeController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -11,5 +11,6 @@ router.get('/', getAllEmployees);
 router.get('/:id', getEmployeeById);
 router.post('/', createEmployee);
 router.delete('/:id', deleteEmployee);
+router.patch('/:id', updateEmployee);
 
 export default router;

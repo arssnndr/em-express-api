@@ -115,3 +115,52 @@ export const deleteEmployee = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const updateEmployee = async (req, res) => {
+    const { id } = req.params;
+    const {
+        username,
+        firstName,
+        lastName,
+        email,
+        birthDate,
+        basicSalary,
+        status,
+        group,
+        description
+    } = req.body;
+
+    try {
+        // Build payload only with provided fields
+        const payload = {};
+        if (username !== undefined) payload.username = username;
+        if (firstName !== undefined) payload.first_name = firstName;
+        if (lastName !== undefined) payload.last_name = lastName;
+        if (email !== undefined) payload.email = email;
+        if (birthDate !== undefined) payload.birth_date = birthDate;
+        if (basicSalary !== undefined) payload.basic_salary = basicSalary;
+        if (status !== undefined) payload.status = status;
+        if (group !== undefined) payload.group_name = group;
+        if (description !== undefined) payload.description = description;
+
+        if (Object.keys(payload).length === 0) {
+            return res.status(400).json({ message: 'No fields provided to update' });
+        }
+
+        const { data, error } = await supabase
+            .from('employees')
+            .update(payload)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating employee:', error);
+            return res.status(500).json({ message: 'Failed to update employee' });
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
