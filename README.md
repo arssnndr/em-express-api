@@ -50,6 +50,21 @@ Didefinisikan di `.env` (lihat `.env.example`)
 - `CORS_ORIGIN` — daftar origin yang diizinkan, pisahkan dengan koma
 - `PORT` (opsional untuk lokal)
 
+## Testing
+
+Project includes unit tests that exercise small parts of the code (controllers). Tests use the built-in Node test runner.
+
+Run tests locally:
+```bash
+npm test
+```
+
+The repository also includes a GitHub Actions workflow that runs the tests on push/PR to `main` (`.github/workflows/nodejs.yml`).
+
+## Notes about running the server and CI
+- The startup script (`bin/www`) performs a fail-fast check for required environment variables (`JWT_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) and exits with a clear message if any are missing. Ensure those are present in `.env` when running locally or in CI.
+- Tests mock external dependencies (Supabase, bcrypt, jwt) so they are fast and do not require a live Supabase project.
+
 ### Generate JWT_SECRET (Strong Random String)
 Anda dapat membuat nilai `JWT_SECRET` yang kuat dengan salah satu perintah berikut (Linux):
 
@@ -89,8 +104,8 @@ Ikuti langkah berikut untuk menjalankan aplikasi frontend di mesin lokal Anda:
 
 1. Clone repository frontend dan masuk ke foldernya
    ```bash
-   git clone https://github.com/arssnndr/employee-management.git
-   cd employee-management
+   git clone https://github.com/arssnndr/fe-employee-management.git
+   cd fe-employee-management
    ```
 
 2. Install dependencies

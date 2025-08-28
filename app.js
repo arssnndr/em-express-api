@@ -36,8 +36,7 @@ app.get('/', (_req, res) => {
     res.send('Employee Management API is running!');
 });
 
-// Mount routes
-app.use('/', indexRouter);
+// Mount routes: expose API only under /api to avoid duplicating endpoints at root
 app.use('/api', indexRouter);
 
 // Fallback 404 as JSON

@@ -6,6 +6,15 @@ import http from 'http';
 
 const debug = debugModule('em-express-api:server');
 
+// Startup environment validation: fail fast with clear message when required env vars missing
+const requiredEnvs = ['JWT_SECRET', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+const missing = requiredEnvs.filter((k) => !process.env[k]);
+if (missing.length > 0) {
+  console.error('\nMissing required environment variables: ' + missing.join(', '));
+  console.error('Please add them to your .env or environment before starting the server.');
+  process.exit(1);
+}
+
 /**
  * Get port from environment and store in Express.
  */

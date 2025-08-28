@@ -1,4 +1,7 @@
-import { supabase } from '../config/supabase.js';
+import { supabase as _supabase } from '../config/supabase.js';
+
+let supabase = _supabase;
+export function _setSupabase(client) { supabase = client; }
 
 export const getAllEmployees = async (req, res) => {
     const { page = 1, pageSize = 10, searchTerm, status, group, sortBy, sortDirection } = req.query;

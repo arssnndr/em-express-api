@@ -1,6 +1,42 @@
-import { supabase } from '../config/supabase.js';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { supabase as _supabase } from '../config/supabase.js';
+import _bcrypt from 'bcrypt';
+import _jwt from 'jsonwebtoken';
+
+// Allow test injection of dependencies
+let supabase = _supabase;
+let bcrypt = _bcrypt;
+let jwt = _jwt;
+
+export function _setSupabase(client) { supabase = client; }
+export function _setBcrypt(mock) { bcrypt = mock; }
+export function _setJwt(mock) { jwt = mock; }
+
+// Parse common expiresIn formats (e.g. '15m', '1h', '3600s') to milliseconds.
+export function parseExpiresInToMs(expiresIn) {
+    const defaultMs = 15 * 60 * 1000; // 15 minutes
+    if (!expiresIn) return defaultMs;
+    if (typeof expiresIn === 'number') return expiresIn * 1000; // assume seconds
+    const str = String(expiresIn).trim();
+    const m = str.match(/^(\d+)\s*(s|m|h|d)$/i);
+    if (m) {
+        const val = Number(m[1]);
+        const unit = m[2].toLowerCase();
+        switch (unit) {
+            case 's':
+                return val * 1000;
+            case 'm':
+                return val * 60 * 1000;
+            case 'h':
+                return val * 60 * 60 * 1000;
+            case 'd':
+                return val * 24 * 60 * 60 * 1000;
+        }
+    }
+    // fallback: if numeric string, treat as seconds
+    const n = parseInt(str, 10);
+    if (!Number.isNaN(n)) return n * 1000;
+    return defaultMs;
+}
 
 export const loginUser = async (req, res) => {
     const { username, password } = req.body;
@@ -40,8 +76,8 @@ export const loginUser = async (req, res) => {
 
         const token = jwt.sign(payload, secret, { expiresIn });
 
-        // Hitung maxAge jika berbentuk m (menit) atau s (detik) sederhana; default 15 menit
-        const maxAgeMs = 15 * 60 * 1000;
+        // Hitung maxAge cookie berdasarkan JWT_EXPIRES_IN agar konsisten dengan token
+        const maxAgeMs = parseExpiresInToMs(expiresIn);
 
         res.cookie('token', token, {
             httpOnly: true,
